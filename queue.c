@@ -40,7 +40,7 @@ bool q_insert_head(struct list_head *head, char *s)
     if (new_item) {
         size_t len_s = strlen(s) + 1;
         new_item->value = (char *) malloc(len_s);
-        strcpy(new_item->value, s);
+        memcpy(new_item->value, s, len_s);
         list_add(&new_item->list, head);
     }
     return (bool) new_item;
@@ -53,7 +53,7 @@ bool q_insert_tail(struct list_head *head, char *s)
     if (new_item) {
         size_t len_s = strlen(s) + 1;
         new_item->value = (char *) malloc(len_s);
-        strcpy(new_item->value, s);
+        memcpy(new_item->value, s, len_s);
         list_add_tail(&new_item->list, head);
     }
     return (bool) new_item;
