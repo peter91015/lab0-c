@@ -50,12 +50,12 @@ bool q_insert_head(struct list_head *head, char *s)
 bool q_insert_tail(struct list_head *head, char *s)
 {
     element_t *new_item = malloc(sizeof(element_t));
-    if (new_item) {
-        size_t len_s = strlen(s) + 1;
-        new_item->value = (char *) malloc(len_s);
-        memcpy(new_item->value, s, len_s);
-        list_add_tail(&new_item->list, head);
-    }
+    if (!new_item)
+        return false;
+    size_t len_s = strlen(s) + 1;
+    new_item->value = (char *) malloc(len_s);
+    memcpy(new_item->value, s, len_s);
+    list_add_tail(&new_item->list, head);
     return (bool) new_item;
 }
 
