@@ -23,12 +23,12 @@ struct list_head *q_new()
 /* Free all storage used by queue */
 void q_free(struct list_head *l)
 {
-    struct list_head *tra = l->next;
-    while (tra != l) {
-        element_t *temp = list_entry(tra, element_t, list);
-        tra = tra->next;
-        free(temp->value);
-        free(temp);
+    struct list_head *current = NULL, *safe = NULL;
+    list_for_each_safe (current, safe, l) {
+        element_t *tmp = list_entry(current, element_t, list);
+        current = current->next;
+        free(tmp->value);
+        free(tmp);
     }
     free(l);
 }
