@@ -43,7 +43,7 @@ bool q_insert_head(struct list_head *head, char *s)
     new_item->value = (char *) malloc(len_s);
     memcpy(new_item->value, s, len_s);
     list_add(&new_item->list, head);
-    return (bool) new_item;
+    return true;
 }
 
 /* Insert an element at tail of queue */
@@ -56,7 +56,7 @@ bool q_insert_tail(struct list_head *head, char *s)
     new_item->value = (char *) malloc(len_s);
     memcpy(new_item->value, s, len_s);
     list_add_tail(&new_item->list, head);
-    return (bool) new_item;
+    return true;
 }
 
 /* Remove an element from head of queue */
