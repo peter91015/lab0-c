@@ -110,8 +110,7 @@ bool q_delete_mid(struct list_head *head)
          prev = prev->prev, next = next->next)
         ;
     // next will be the node deleted after for loop
-    next->next->prev = next->prev;
-    next->prev->next = next->next;
+    list_del(next);
     element_t *pop_item = list_entry(next, element_t, list);
     free(pop_item->value);
     free(pop_item);
