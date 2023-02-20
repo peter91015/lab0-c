@@ -37,10 +37,10 @@ void q_free(struct list_head *l)
 bool q_insert_head(struct list_head *head, char *s)
 {
     element_t *new_item = malloc(sizeof(element_t));
-    if (!new_item)
+    if (!new_item || !s)
         return false;
     size_t len_s = strlen(s) + 1;
-    new_item->value = (char *) malloc(len_s);
+    new_item->value = malloc(len_s);
     if (!new_item->value) {
         free(new_item);
         return false;
@@ -54,10 +54,10 @@ bool q_insert_head(struct list_head *head, char *s)
 bool q_insert_tail(struct list_head *head, char *s)
 {
     element_t *new_item = malloc(sizeof(element_t));
-    if (!new_item)
+    if (!new_item || !s)
         return false;
     size_t len_s = strlen(s) + 1;
-    new_item->value = (char *) malloc(len_s);
+    new_item->value = malloc(len_s);
     if (!new_item->value) {
         free(new_item);
         return false;
@@ -74,8 +74,10 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
     element_t *pop_item = list_entry(head->next, element_t, list);
     list_del(head->next);
-    if (sp)
-        memcpy(sp, pop_item->value, bufsize + 1);
+    if (sp) {
+        memcpy(sp, pop_item->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
     return pop_item;
 }
 
@@ -86,8 +88,10 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
     element_t *pop_item = list_entry(head->prev, element_t, list);
     list_del(head->prev);
-    if (sp)
-        memcpy(sp, pop_item->value, bufsize + 1);
+    if (sp) {
+        memcpy(sp, pop_item->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
     return pop_item;
 }
 
@@ -154,7 +158,31 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending order */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (!head || head->next == head->prev)
+        return;
+    element_t *current = NULL, *next = NULL;
+
+    char *pivot = list_entry(head->next, element_t, list)->value;
+    struct list_head greater, less;
+    INIT_LIST_HEAD(&greater);
+    INIT_LIST_HEAD(&less);
+    list_for_each_entry_safe (current, next, head, list) {
+        int tmp = strcmp(current->value, pivot);
+        if (tmp > 0) {
+            list_del(&current->list);
+            list_add(&current->list, &greater);
+        } else if (tmp < 0) {
+            list_del(&current->list);
+            list_add(&current->list, &less);
+        }
+    }
+    q_sort(&less);
+    q_sort(&greater);
+    list_splice_tail(&greater, head);
+    list_splice(&less, head);
+}
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
