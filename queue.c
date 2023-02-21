@@ -1,6 +1,8 @@
+#include <search.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define HASH_TABLE_SIZE 100
 
 #include "queue.h"
 
@@ -126,6 +128,35 @@ bool q_delete_mid(struct list_head *head)
 /* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
+    element_t *current = NULL, *next = NULL;
+    hcreate(HASH_TABLE_SIZE);
+    ENTRY e;
+    ENTRY *ep;
+    list_for_each_entry_safe (current, next, head, list) {
+        int str_len = strlen(current->value) + 1;
+        e.key = malloc(str_len);
+        memcpy(e.key, current->value, str_len);
+        e.data = malloc(sizeof(int));
+        *((int *) (e.data)) = 1;
+        ep = hsearch(e, FIND);
+        if (!ep) {
+            ep = hsearch(e, ENTER);
+            if (!ep)
+                return false;
+        } else
+            *((int *) (ep->data)) = 2;
+    }
+    list_for_each_entry_safe (current, next, head, list) {
+        e.key = current->value;
+        e.data = 0;
+        ep = hsearch(e, FIND);
+        if (*((int *) ep->data) == 2) {
+            list_del(&current->list);
+            free(current->value);
+            free(current);
+        }
+    }
+    hdestroy();
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
     return true;
 }
