@@ -149,13 +149,14 @@ bool q_delete_dup(struct list_head *head)
                 return false;
         } else
             *((int *) (ep->data)) = 2;
+        // free(e.key);
     }
     list_for_each_entry_safe (current, next, head, list) {
         e.key = current->value;
         e.data = 0;
         ep = hsearch(e, FIND);
-        if (*((int *) ep->data) == 2) {
-            list_del(&current->list);
+        if ((*(int *) ep->data) == 2) {
+            list_del(&(current->list));
             free(current->value);
             free(current);
         }
@@ -237,8 +238,28 @@ void q_sort(struct list_head *head)
  * the right side of it */
 int q_descend(struct list_head *head)
 {
+    if (!head || head->next == head->prev)
+        return 0;
+    int size = q_size(head);
+    // element_t *current = NULL, *next = NULL;
+    struct list_head *current = NULL, *next = NULL;
+    char *max_str = list_entry(head->prev, element_t, list)->value;
+    for (current = head->prev, next = head->prev->prev; current != head;
+         current = next, next = next->prev) {
+        element_t *cur_element = list_entry(current, element_t, list);
+        int tmp = strcmp(cur_element->value, max_str);
+        if (tmp > 0)
+            max_str = cur_element->value;
+        // list_del(&current->list);
+        else if (tmp < 0) {
+            list_del(&(cur_element->list));
+            free(cur_element->value);
+            free(cur_element);
+            size--;
+        }
+    }
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    return size;
 }
 
 /* merge two sorted lists into l1 in the ascending order*/
