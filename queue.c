@@ -167,6 +167,21 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
+    struct list_head *current = NULL, *safe = NULL;
+    for (current = head->next->next, safe = current->next->next;
+         current != head && current->prev != head;
+         current = safe, safe = current->next->next) {
+        struct list_head *prev = current->prev;
+
+        prev->prev->next = current;
+        current->prev = prev->prev;
+
+        prev->prev = current;
+        current->next = prev;
+
+        prev->next = safe->prev;
+        safe->prev->prev = prev;
+    }
     // https://leetcode.com/problems/swap-nodes-in-pairs/
 }
 
@@ -225,6 +240,8 @@ int q_descend(struct list_head *head)
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     return 0;
 }
+
+/* merge two sorted lists into l1 in the ascending order*/
 void merge_2_list(struct list_head *l1, struct list_head *l2)
 {
     struct list_head tmp;
@@ -244,6 +261,7 @@ void merge_2_list(struct list_head *l1, struct list_head *l2)
     // free(l2);
     // l2 = NULL;
 }
+
 /* Merge all the queues into one sorted queue, which is in ascending order */
 int q_merge(struct list_head *head)
 {
