@@ -125,25 +125,36 @@ bool q_delete_mid(struct list_head *head)
     return true;
 }
 
+typedef struct {
+    struct list_head list;
+    int *dup;
+    char *key;
+} h_table_list;
 /* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
     element_t *current = NULL, *next = NULL;
+    struct list_head *table_list = malloc(sizeof(struct list_head));
+    INIT_LIST_HEAD(table_list);
     hcreate(HASH_TABLE_SIZE);
     ENTRY e;
     ENTRY *ep;
     list_for_each_entry (current, head, list) {
-        int str_len = strlen(current->value) + 1;
-        e.key = malloc(str_len);
-        if (!e.key)
-            return false;
-        memcpy(e.key, current->value, str_len);
-        e.data = malloc(sizeof(int));
-        if (!e.key)
-            return false;
-        *((int *) (e.data)) = 1;
+        e.key = current->value;
+        e.data = (void *) 0;
         ep = hsearch(e, FIND);
         if (!ep) {
+            int str_len = strlen(current->value) + 1;
+            e.key = malloc(str_len);
+            e.data = malloc(sizeof(int));
+            *((int *) (e.data)) = 1;
+            h_table_list *entry = malloc(sizeof(h_table_list));
+            entry->dup = e.data;
+            entry->key = e.key;
+            list_add(&entry->list, table_list);
+            if (!e.key)
+                return false;
+            memcpy(e.key, current->value, str_len);
             ep = hsearch(e, ENTER);
             if (!ep)
                 return false;
@@ -161,6 +172,14 @@ bool q_delete_dup(struct list_head *head)
             free(current);
         }
     }
+
+    h_table_list *cur = NULL, *safe = NULL;
+    list_for_each_entry_safe (cur, safe, table_list, list) {
+        free(cur->dup);
+        free(cur->key);
+        free(cur);
+    }
+    free(table_list);
     hdestroy();
     return true;
 }
