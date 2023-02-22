@@ -225,10 +225,40 @@ int q_descend(struct list_head *head)
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     return 0;
 }
-
+void merge_2_list(struct list_head *l1, struct list_head *l2)
+{
+    struct list_head tmp;
+    INIT_LIST_HEAD((&tmp));
+    list_splice(l1, &tmp);  // temporarily put l1 into tmp
+    INIT_LIST_HEAD(l1);
+    for (; !list_empty(&tmp) && !list_empty(l2);) {
+        char *str_1 = list_entry(tmp.next, element_t, list)->value,
+             *str_2 = list_entry(l2->next, element_t, list)->value;
+        strcmp(str_1, str_2) < 0 ? list_move_tail(tmp.next, l1)
+                                 : list_move_tail(l2->next, l1);
+    }
+    // splice the rest of queue
+    list_empty(&tmp) ? list_splice_tail(l2, l1) : list_splice_tail(&tmp, l1);
+    INIT_LIST_HEAD(&tmp);
+    INIT_LIST_HEAD(l2);
+    // free(l2);
+    // l2 = NULL;
+}
 /* Merge all the queues into one sorted queue, which is in ascending order */
 int q_merge(struct list_head *head)
 {
+    if (!head)
+        return 0;
+    struct list_head *current = NULL,
+                     *first_q =
+                         list_entry(head->next, queue_contex_t, chain)->q,
+                     *second_q = NULL;
+    // no need to free the queue_contex_t merged
+    for (current = head->next->next; current != head; current = current->next) {
+        // merge current queue the first queue
+        second_q = list_entry(current, queue_contex_t, chain)->q;
+        merge_2_list(first_q, second_q);
+    }
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    return q_size(first_q);
 }
