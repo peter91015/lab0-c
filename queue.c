@@ -132,11 +132,15 @@ bool q_delete_dup(struct list_head *head)
     hcreate(HASH_TABLE_SIZE);
     ENTRY e;
     ENTRY *ep;
-    list_for_each_entry_safe (current, next, head, list) {
+    list_for_each_entry (current, head, list) {
         int str_len = strlen(current->value) + 1;
         e.key = malloc(str_len);
+        if (!e.key)
+            return false;
         memcpy(e.key, current->value, str_len);
         e.data = malloc(sizeof(int));
+        if (!e.key)
+            return false;
         *((int *) (e.data)) = 1;
         ep = hsearch(e, FIND);
         if (!ep) {
@@ -157,7 +161,6 @@ bool q_delete_dup(struct list_head *head)
         }
     }
     hdestroy();
-    // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
     return true;
 }
 
