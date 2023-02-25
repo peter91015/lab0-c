@@ -234,13 +234,11 @@ void reverse_nodes(struct list_head *head,
                    struct list_head *first,
                    struct list_head *last)
 {
-    // struct list_head *tmp_head = malloc(sizeof(struct list_head));
     head->next = first;
     first->prev = head;
     head->prev = last;
     last->next = head;
     q_reverse(head);
-    // list_for_each_entry()
     first->next = NULL;
     last->prev = NULL;
 }
@@ -258,61 +256,6 @@ void q_reverseK(struct list_head *head, int k)
         next->prev = current;
         current->next = next;
     }
-}
-
-/* Sort elements of queue in ascending order */
-void q_sort(struct list_head *head)
-{
-    if (!head || head->next == head->prev)
-        return;
-    element_t *current = NULL, *next = NULL;
-
-    char *pivot = list_entry(head->next, element_t, list)->value;
-    struct list_head greater, less;
-    INIT_LIST_HEAD(&greater);
-    INIT_LIST_HEAD(&less);
-    list_for_each_entry_safe (current, next, head, list) {
-        int tmp = strcmp(current->value, pivot);
-        if (tmp > 0) {
-            list_del(&current->list);
-            list_add(&current->list, &greater);
-        } else if (tmp < 0) {
-            list_del(&current->list);
-            list_add(&current->list, &less);
-        }
-    }
-    q_sort(&less);
-    q_sort(&greater);
-    list_splice_tail(&greater, head);
-    list_splice(&less, head);
-}
-
-/* Remove every node which has a node with a strictly greater value anywhere to
- * the right side of it */
-int q_descend(struct list_head *head)
-{
-    if (!head || head->next == head->prev)
-        return 0;
-    int size = q_size(head);
-    // element_t *current = NULL, *next = NULL;
-    struct list_head *current = NULL, *next = NULL;
-    char *max_str = list_entry(head->prev, element_t, list)->value;
-    for (current = head->prev, next = head->prev->prev; current != head;
-         current = next, next = next->prev) {
-        element_t *cur_element = list_entry(current, element_t, list);
-        int tmp = strcmp(cur_element->value, max_str);
-        if (tmp > 0)
-            max_str = cur_element->value;
-        // list_del(&current->list);
-        else if (tmp < 0) {
-            list_del(&(cur_element->list));
-            free(cur_element->value);
-            free(cur_element);
-            size--;
-        }
-    }
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return size;
 }
 
 /* merge two sorted lists into l1 in the ascending order*/
@@ -336,6 +279,54 @@ void merge_2_list(struct list_head *l1, struct list_head *l2)
     // l2 = NULL;
 }
 
+/* Sort elements of queue in ascending order */
+void q_sort(struct list_head *head)
+{
+    if (!head || head->next == head->prev)
+        return;
+    struct list_head *next = NULL, *prev = NULL;
+    // divide the list into two lists
+    LIST_HEAD(first);
+    // meet the middle node
+    for (next = head->next, prev = head->prev;
+         next != prev->prev && next != prev;
+         prev = prev->prev, next = next->next)
+        ;
+
+    list_cut_position(&first, head, next);
+    q_sort(&first);
+    q_sort(head);
+    merge_2_list(head, &first);
+}
+
+/* Remove every node which has a node with a strictly greater value anywhere to
+ * the right side of it */
+int q_descend(struct list_head *head)
+{
+    if (!head || head->next == head->prev)
+        return 0;
+    int size = q_size(head);
+    struct list_head *current = NULL, *next = NULL;
+    char *max_str = list_entry(head->prev, element_t, list)->value;
+    for (current = head->prev, next = head->prev->prev; current != head;
+         current = next, next = next->prev) {
+        element_t *cur_element = list_entry(current, element_t, list);
+        int tmp = strcmp(cur_element->value, max_str);
+        if (tmp > 0)
+            max_str = cur_element->value;
+        // list_del(&current->list);
+        else if (tmp < 0) {
+            list_del(&(cur_element->list));
+            free(cur_element->value);
+            free(cur_element);
+            size--;
+        }
+    }
+    return size;
+}
+
+
+
 /* Merge all the queues into one sorted queue, which is in ascending order */
 int q_merge(struct list_head *head)
 {
@@ -351,6 +342,5 @@ int q_merge(struct list_head *head)
         second_q = list_entry(current, queue_contex_t, chain)->q;
         merge_2_list(first_q, second_q);
     }
-    // https://leetcode.com/problems/merge-k-sorted-lists/
     return q_size(first_q);
 }
