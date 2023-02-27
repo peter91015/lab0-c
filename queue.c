@@ -27,6 +27,8 @@ struct list_head *q_new()
 /* Free all storage used by queue */
 void q_free(struct list_head *l)
 {
+    if (!l)
+        return;
     struct list_head *current = NULL, *safe = NULL;
     list_for_each_safe (current, safe, l) {
         element_t *tmp = list_entry(current, element_t, list);
@@ -78,12 +80,15 @@ bool q_insert_tail(struct list_head *head, char *s)
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
+    if (!head)
+        return NULL;
     if (list_empty(head))
         return NULL;
     element_t *pop_item = list_entry(head->next, element_t, list);
     list_del(head->next);
     if (sp) {
-        memcpy(sp, pop_item->value, bufsize - 1);
+        // memcpy(sp, pop_item->value, bufsize - 1);
+        strncpy(sp, pop_item->value, bufsize);
         sp[bufsize - 1] = '\0';
     }
     return pop_item;
@@ -92,12 +97,15 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
+    if (!head)
+        return NULL;
     if (list_empty(head))
         return NULL;
     element_t *pop_item = list_entry(head->prev, element_t, list);
     list_del(head->prev);
     if (sp) {
-        memcpy(sp, pop_item->value, bufsize - 1);
+        // memcpy(sp, pop_item->value, bufsize - 1);
+        strncpy(sp, pop_item->value, bufsize);
         sp[bufsize - 1] = '\0';
     }
     return pop_item;
