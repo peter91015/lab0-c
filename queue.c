@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #define HASH_TABLE_SIZE 100
+#define MAX_STRING_SIZE 512
 
 #include "queue.h"
 
+const size_t element_size = sizeof(element_t);
 /* Notice: sometimes, Cppcheck would find the potential NULL pointer bugs,
  * but some of them cannot occur. You can suppress them by adding the
  * following line.
@@ -38,8 +40,10 @@ void q_free(struct list_head *l)
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
-    element_t *new_item = malloc(sizeof(element_t));
-    if (!new_item || !s)
+    if (!s)
+        return false;
+    element_t *new_item = malloc(element_size);
+    if (!new_item)
         return false;
     size_t len_s = strlen(s) + 1;
     new_item->value = malloc(len_s);
@@ -47,7 +51,7 @@ bool q_insert_head(struct list_head *head, char *s)
         free(new_item);
         return false;
     }
-    memcpy(new_item->value, s, len_s);
+    strncpy(new_item->value, s, len_s);
     list_add(&new_item->list, head);
     return true;
 }
@@ -55,8 +59,10 @@ bool q_insert_head(struct list_head *head, char *s)
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
-    element_t *new_item = malloc(sizeof(element_t));
-    if (!new_item || !s)
+    if (!s)
+        return false;
+    element_t *new_item = malloc(element_size);
+    if (!new_item)
         return false;
     size_t len_s = strlen(s) + 1;
     new_item->value = malloc(len_s);
@@ -64,7 +70,7 @@ bool q_insert_tail(struct list_head *head, char *s)
         free(new_item);
         return false;
     }
-    memcpy(new_item->value, s, len_s);
+    strncpy(new_item->value, s, len_s);
     list_add_tail(&new_item->list, head);
     return true;
 }
@@ -187,22 +193,7 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
-    struct list_head *current = NULL, *safe = NULL;
-    for (current = head->next->next, safe = current->next->next;
-         current != head && current->prev != head;
-         current = safe, safe = current->next->next) {
-        struct list_head *prev = current->prev;
-
-        prev->prev->next = current;
-        current->prev = prev->prev;
-
-        prev->prev = current;
-        current->next = prev;
-
-        prev->next = safe->prev;
-        safe->prev->prev = prev;
-    }
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
+    q_reverseK(head, 2);
 }
 
 /* Reverse elements in queue */
@@ -275,8 +266,6 @@ void merge_2_list(struct list_head *l1, struct list_head *l2)
     list_empty(&tmp) ? list_splice_tail(l2, l1) : list_splice_tail(&tmp, l1);
     INIT_LIST_HEAD(&tmp);
     INIT_LIST_HEAD(l2);
-    // free(l2);
-    // l2 = NULL;
 }
 
 /* Sort elements of queue in ascending order */
@@ -336,7 +325,7 @@ int q_merge(struct list_head *head)
                      *first_q =
                          list_entry(head->next, queue_contex_t, chain)->q,
                      *second_q = NULL;
-    // no need to free the queue_contex_t merged
+
     for (current = head->next->next; current != head; current = current->next) {
         // merge current queue the first queue
         second_q = list_entry(current, queue_contex_t, chain)->q;
