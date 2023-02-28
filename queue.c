@@ -24,6 +24,32 @@ struct list_head *q_new()
     return new;
 }
 
+/* shuffle the list */
+void q_shuffle(struct list_head *head)
+{
+    size_t size = q_size(head);
+    struct list_head **node_arr = malloc(size * sizeof(struct list_head *)),
+                     *current = NULL;
+    int i = 0;
+    list_for_each (current, head)
+        node_arr[i++] = current;
+    // shuffle
+    for (i = size - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        struct list_head *tmp = node_arr[i];
+        node_arr[i] = node_arr[j];
+        node_arr[j] = tmp;
+    }
+
+    // splice
+    head->next = head;
+    head->prev = head;
+    for (i = 0; i < size; i++)
+        list_add_tail(node_arr[i], head);
+
+    free(node_arr);
+}
+
 /* Free all storage used by queue */
 void q_free(struct list_head *l)
 {
