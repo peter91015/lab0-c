@@ -207,7 +207,8 @@ static bool doit(int mode)
     free(exec_times);
     free(classes);
     free(input_data);
-
+    for (int i = 0; i < DUDECT_TESTS; i++)
+        free(t_crops[i]);
     return ret;
 }
 
