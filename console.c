@@ -392,7 +392,7 @@ static bool do_time(int argc, char *argv[])
 }
 
 static bool use_linenoise = true;
-static int web_fd;
+int web_fd = -1;
 
 static bool do_web(int argc, char *argv[])
 {
@@ -405,7 +405,7 @@ static bool do_web(int argc, char *argv[])
     web_fd = web_open(port);
     if (web_fd > 0) {
         printf("listen on port %d, fd is %d\n", port, web_fd);
-        use_linenoise = false;
+        use_linenoise = true;
     } else {
         perror("ERROR");
         exit(web_fd);

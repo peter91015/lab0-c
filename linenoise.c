@@ -103,23 +103,25 @@
  *
  */
 
+#include "linenoise.h"
 #include <ctype.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
-
-#include "linenoise.h"
-
+#include "web.h"
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
 #define LINENOISE_MAX_LINE 4096
 
+extern int web_fd;
 static char *unsupported_term[] = {"dumb", "cons25", "emacs", NULL};
 static line_completion_callback_t *completion_callback = NULL;
 static line_hints_callback_t *hints_callback = NULL;
@@ -175,6 +177,7 @@ enum KEY_ACTION {
     ESC = 27,       /* Escape */
     BACKSPACE = 127 /* Backspace */
 };
+
 
 static void line_atexit(void);
 int line_history_add(const char *line);
@@ -897,6 +900,7 @@ static void line_edit_next_word(struct line_state *l)
  *
  * The function returns the length of the current buffer.
  */
+
 static int line_edit(int stdin_fd,
                      int stdout_fd,
                      char *buf,
@@ -928,7 +932,7 @@ static int line_edit(int stdin_fd,
      * initially is just an empty string.
      */
     line_history_add("");
-
+    // printf("test\n");
     if (write(l.ofd, prompt, l.plen) == -1)
         return -1;
     while (1) {
@@ -936,9 +940,45 @@ static int line_edit(int stdin_fd,
         int nread;
         char seq[5];
 
-        nread = read(l.ifd, &c, 1);
-        if (nread <= 0)
-            return l.len;
+        if (web_fd != -1) {
+            fd_set set;
+
+            FD_ZERO(&set);
+            FD_SET(web_fd, &set);
+            FD_SET(stdin_fd, &set);
+            int rv = select(web_fd + 1, &set, NULL, NULL, NULL);
+            struct sockaddr_in clientaddr;
+            socklen_t clientlen = sizeof(clientaddr);
+            int connfd;
+
+            switch (rv) {
+            case -1:
+                perror("select");
+                continue;
+            case 0:
+                printf("timeout\n");
+                continue;
+            default:
+                if (FD_ISSET(web_fd, &set)) {
+                    connfd = accept(web_fd, (struct sockaddr *) &clientaddr,
+                                    &clientlen);
+                    char *p = web_recv(connfd, &clientaddr);
+                    strncpy(buf, p, strlen(p) + 1);
+                    close(connfd);
+                    free(p);
+                    return strlen(p);
+                } else if (FD_ISSET(stdin_fd, &set)) {
+                    nread = read(l.ifd, &c, 1);
+                    if (nread <= 0)
+                        return l.len;
+                }
+            }
+        } else {
+            nread = read(l.ifd, &c, 1);
+            if (nread <= 0)
+                return l.len;
+        }
+
 
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the

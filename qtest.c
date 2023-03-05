@@ -98,8 +98,7 @@ void q_shuffle(struct list_head *head)
     }
 
     // splice
-    head->next = head;
-    head->prev = head;
+    INIT_LIST_HEAD(head);
     for (i = 0; i < size; i++)
         list_add_tail(node_arr[i], head);
 
