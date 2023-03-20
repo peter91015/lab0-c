@@ -1,10 +1,13 @@
+#include <linux/types.h>
 #include <search.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define HASH_TABLE_SIZE 100
+#define HASH_TABLE_SIZE 64
 #define MAX_STRING_SIZE 512
 
+
+#include "hlist.h"
 #include "queue.h"
 
 const size_t element_size = sizeof(element_t);
@@ -147,14 +150,104 @@ bool q_delete_mid(struct list_head *head)
     return true;
 }
 
-typedef struct {
+/*typedef struct {
     struct list_head list;
     int *dup;
     char *key;
-} h_table_list;
+} h_table_list;*/
+typedef struct {
+    char *value;
+    struct hlist_node hlist;
+    int flag;
+} hash_element_t;
+#define GOLDEN_RATIO_32 0x61C88647
+#define __hash_32 __hash_32_generic
+static inline __u32 __hash_32_generic(__u32 val)
+{
+    return val * GOLDEN_RATIO_32;
+}
+
+static inline __u32 hash_32(__u32 val, unsigned int bits)
+{
+    return __hash_32(val) >> (32 - bits);
+}
+static unsigned compute_key(char *const value)
+{
+    char *current = NULL;
+    char accumulate = 0;
+    for (current = value; *current; current++)
+        accumulate = accumulate ^ *current;
+    return (unsigned) accumulate;
+}
 /* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
+    struct hlist_head hash_table[HASH_TABLE_SIZE];
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+        hash_table[i].first = NULL;
+    }
+    element_t *current = NULL, *next = NULL;
+    // first traverse the list to build the hash table
+
+    list_for_each_entry (current, head, list) {
+        size_t key = (size_t) compute_key(current->value);
+        key = hash_32(key, 6);
+
+        hash_element_t *cur_hlist =
+            hlist_entry_safe(hash_table[key].first, hash_element_t, hlist);
+        hlist_for_each_entry_from(cur_hlist, hlist)
+        {
+            int tmp = strcmp(cur_hlist->value, current->value);
+            if (!tmp) {  // there are duplicate strings
+                cur_hlist->flag = 1;
+                break;
+            }
+        }
+        if (!cur_hlist) {  // cur_hlist is NULL means that all nodes in hlist
+                           // are traversed or hlist has no node
+            // add a new node for hlist
+            hash_element_t *new_item = malloc(sizeof(hash_element_t));
+            new_item->value = strdup(current->value);
+            new_item->flag = 0;  // means no duplicate so far
+            new_item->hlist.next = NULL;
+            new_item->hlist.pprev = NULL;
+            hlist_add_head(&new_item->hlist, &hash_table[key]);
+        }
+    }
+
+    // second traversal to delete the duplicate nodes with hash table
+    current = NULL;
+    list_for_each_entry_safe (current, next, head, list) {
+        size_t key = (size_t) compute_key(current->value);
+        key = hash_32(key, 6);
+        hash_element_t *cur_hlist =
+            hlist_entry_safe(hash_table[key].first, hash_element_t, hlist);
+        hlist_for_each_entry_from(cur_hlist, hlist)
+        {
+            int tmp = strcmp(cur_hlist->value, current->value);
+            if (!tmp) {
+                if (cur_hlist->flag) {
+                    list_del(&(current->list));
+                    free(current->value);
+                    free(current);
+                    break;
+                }
+            }
+        }
+    }
+    // free the hash table
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+        hash_element_t *current = NULL;
+        struct hlist_node *next = NULL;
+        hlist_for_each_entry_safe(current, next, &hash_table[i], hlist)
+        {
+            free(current->value);
+            free(current);
+        }
+    }
+    return true;
+}
+/*{
     element_t *current = NULL, *next = NULL;
     struct list_head *table_list = malloc(sizeof(struct list_head));
     INIT_LIST_HEAD(table_list);
@@ -204,7 +297,7 @@ bool q_delete_dup(struct list_head *head)
     free(table_list);
     hdestroy();
     return true;
-}
+}*/
 
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)

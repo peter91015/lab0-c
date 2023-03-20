@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <getopt.h>
+#include <linux/types.h>
 #include <signal.h>
 #include <spawn.h>
 #include <stdio.h>
@@ -20,9 +21,12 @@
 #endif
 
 #include "dudect/fixture.h"
+#include "hlist.h"
 #include "list.h"
 #include "random.h"
 
+
+#define HASH_TABLE_SIZE 64
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
 extern int show_entropy;
@@ -42,9 +46,8 @@ extern int show_entropy;
  * OK as long as head field of queue_t structure is in first position in
  * solution code
  */
-#include "queue.h"
-
 #include "console.h"
+#include "queue.h"
 #include "report.h"
 
 /* Settable parameters */
@@ -104,6 +107,7 @@ void q_shuffle(struct list_head *head)
 
     free(node_arr);
 }
+
 
 static bool do_shuffle(int argc, char *argv[])
 {
